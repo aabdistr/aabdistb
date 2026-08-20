@@ -1,0 +1,799 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AAB DISTRIBUIÇÃO</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f4f6;color:#20252a;font-family:Arial,sans-serif}
+header{background:#0b3554;color:white;padding:15px 17px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.brand{font-size:22px;font-weight:700}
+.menu{font-size:27px;border:0;background:none;color:white;margin:0;padding:0}
+main{max-width:900px;margin:auto;padding:14px}
+.card{background:#fff;border-radius:14px;padding:16px;margin-bottom:13px;box-shadow:0 2px 7px rgba(0,0,0,.12)}
+h2{margin:0 0 13px;font-size:21px}
+h3{margin:0 0 8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;font-size:14px;color:#666;margin-bottom:5px}
+input,textarea{width:100%;padding:13px;border:1px solid #bfc4c8;border-radius:9px;font-size:17px;background:white}
+textarea{min-height:75px;resize:vertical}
+button{border:0;border-radius:10px;padding:12px 15px;font-size:16px;font-weight:700;background:#c90000;color:#fff;margin-top:9px}
+button.gray{background:#5b6065} button.blue{background:#0b507e} button.green{background:#187a3d}
+button.light{background:#e9edf0;color:#25313a}
+.nav{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.nav button{min-height:70px;margin:0;font-size:17px}
+.big{width:100%;min-height:58px;font-size:18px}
+.hidden{display:none!important}
+.muted{color:#69737b;font-size:14px}
+.result{padding:13px 4px;border-bottom:1px solid #ddd;cursor:pointer}
+.result b{display:block;font-size:16px}
+.badge{display:inline-block;border-radius:20px;padding:5px 9px;background:#e9eef2;font-size:13px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left;font-size:14px}
+th{background:#edf0f2}
+.total{text-align:right;font-size:21px;font-weight:700;margin-top:13px}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:60;display:none;align-items:center;justify-content:center;padding:18px}
+.dialog{background:#fff;border-radius:15px;padding:18px;width:min(520px,100%);max-height:90vh;overflow:auto}
+.side{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:none}
+.drawer{width:min(330px,88vw);height:100%;background:white;padding:12px}
+.drawer button{display:block;width:100%;text-align:left;background:white;color:#222;margin:0;border-radius:0;padding:15px;font-size:17px}
+.drawer h2{padding:8px 10px}
+.item-card{border:1px solid #d5d9dc;border-radius:11px;padding:12px;margin-top:10px}
+.item-entry button{white-space:nowrap}
+.pay{padding:9px 12px}.pay-value{border:1px solid #555;padding:7px 9px;margin-top:5px;min-height:28px}
+@media(max-width:600px){.grid,.nav{grid-template-columns:1fr}.item-entry{grid-template-columns:80px minmax(0,1fr) auto auto!important;gap:6px}.item-entry button{padding:9px 8px;font-size:14px}}
+</style>
+</head>
+<body>
+<header><div class="brand">📋 AAB DISTRIBUIÇÃO</div><button class="menu" onclick="openMenu()">☰</button></header>
+
+<div id="side" class="side" onclick="closeMenu()">
+  <div class="drawer" onclick="event.stopPropagation()">
+    <h2>AAB DISTRIBUIÇÃO</h2>
+    <button onclick="go('home')">🏠 Início</button>
+    <button onclick="startNewOrder()">📝 Novo pedido</button>
+    <button onclick="go('orders')">📁 Pedidos salvos</button>
+    <button onclick="go('customers')">👥 Clientes</button>
+    <button onclick="go('products')">💰 Tabela de preços</button>
+    <button onclick="go('sold')">📊 Itens vendidos</button>
+  </div>
+</div>
+
+<main>
+<section id="home">
+  <div class="card">
+    <h2>Menu principal</h2>
+    <div class="nav">
+      <button onclick="startNewOrder()">📝 Novo pedido</button>
+      <button class="gray" onclick="go('orders')">📁 Pedidos salvos</button>
+      <button class="blue" onclick="go('customers')">👥 Clientes</button>
+      <button class="gray" onclick="go('products')">💰 Tabela de preços</button>
+      <button class="blue" onclick="go('sold')">📊 Itens vendidos</button>
+    </div>
+  </div>
+</section>
+
+<section id="order" class="hidden">
+  <div class="card">
+    <h2>Pedido <span id="orderNo"></span></h2>
+    <div class="grid">
+      <div>
+        <label>Cliente</label>
+        <input id="clientInput" placeholder="Digite o nome ou código" autocomplete="off">
+        <div id="clientResults"></div>
+      </div>
+      <div>
+        <label>Tipo</label>
+        <button id="quoteBtn" class="light big" onclick="toggleQuote()">☐ Orçamento</button>
+      </div>
+    </div>
+    <div id="newClientBox" class="hidden" style="margin-top:12px;padding:13px;background:#eef6fa;border-radius:10px">
+      <b>Cliente não cadastrado</b>
+      <div class="muted" style="margin:5px 0">Você pode continuar sem cadastrar ou cadastrar agora.</div>
+      <button class="green" onclick="openQuickClient()">➕ Cadastrar este cliente</button>
+      <button class="gray" onclick="continueWithoutClient()">Continuar sem cadastro</button>
+    </div>
+    <div style="margin-top:12px">
+      <label>Observação</label>
+      <textarea id="orderNote" placeholder="Opcional"></textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🛒 Itens</h2>
+    <button class="blue big" onclick="goToItems()">➕ Entrar em Itens / Tabela de preços</button>
+    <div id="orderItemsPreview" style="margin-top:10px"></div>
+    <div class="total">TOTAL: R$ <span id="orderTotal">0,00</span></div>
+    <div class="actions">
+      <button class="green" onclick="saveOrder()">💾 Salvar</button>
+      <button class="gray" onclick="printCurrent()">🖨️ Imprimir</button>
+      <button class="green" onclick="shareCurrentWhatsApp()">📱 WhatsApp</button>
+      <button class="gray" onclick="cancelCurrentOrder()">✖ Cancelar pedido</button>
+      <button class="gray" onclick="go('home')">← Voltar</button>
+    </div>
+  </div>
+</section>
+
+<section id="items" class="hidden">
+  <div class="card">
+    <h2>🛒 Itens do pedido <span id="itemsOrderNo"></span></h2>
+    <div class="muted">Pesquise pelo nome ou código.</div>
+    <input id="productSearch" placeholder="Ex.: Fano" autocomplete="off" style="margin-top:8px">
+    <div id="productResults"></div>
+    <div id="selectedProduct" class="hidden item-card">
+      <h3 id="selectedName"></h3>
+      <div id="selectedInfo" class="muted"></div>
+      <div style="margin-top:10px">
+        <label>Cor</label>
+        <div id="colorOptions" class="actions"></div>
+        <div class="muted" style="margin-top:5px">Sortido é o padrão. Toque numa cor somente se quiser especificar.</div>
+      </div>
+      <div class="grid item-entry" style="margin-top:10px;grid-template-columns:90px minmax(0,1fr) auto auto;align-items:end">
+        <div><label>Qtd.</label><input id="itemQty" type="number" min="1" value="1" style="padding:10px"></div>
+        <div><label>Preço</label><input id="itemPrice" type="number" step="0.01"></div>
+        <button class="green" onclick="addItem()" style="padding:9px 11px;margin-top:0">Add.</button>
+        <button class="gray" onclick="cancelSelected()" style="padding:9px 11px;margin-top:0">Canc.</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Itens adicionados</h2>
+    <div id="itemsList"></div>
+    <div class="total">TOTAL: R$ <span id="itemsTotal">0,00</span></div>
+    <div class="actions">
+      <button class="green" onclick="saveOrder();go('order')">💾 Salvar pedido</button>
+      <button class="gray" onclick="go('order')">← Voltar ao pedido</button>
+    </div>
+  </div>
+</section>
+
+<section id="orders" class="hidden">
+  <div class="card"><h2>📁 Pedidos salvos</h2><div id="ordersList"></div><button class="gray" onclick="go('home')">← Voltar</button></div>
+</section>
+
+<section id="customers" class="hidden">
+  <div class="card">
+    <h2>👥 Cadastro de clientes</h2>
+    <div class="muted">Todos os campos são opcionais. O código é automático.</div>
+    <div class="grid" style="margin-top:10px">
+      <div><label>Cód.</label><input id="cCode" readonly style="background:#eee"></div>
+      <div><label>Razão Social</label><input id="cRazao"></div>
+      <div><label>CNPJ</label><input id="cCnpj"></div>
+      <div><label>Ins. Est.</label><input id="cIE"></div>
+      <div><label>Fantasia</label><input id="cFantasia"></div>
+      <div><label>Telefone</label><input id="cTelefone"></div>
+    </div>
+    <div style="margin-top:10px"><label>Endereço</label><input id="cEndereco"></div>
+    <div style="margin-top:10px"><label>Cidade</label><input id="cCidade"></div>
+    <button class="green" onclick="saveCustomerForm()">➕ Cadastrar</button>
+    <button class="gray" onclick="clearCustomerForm()">Limpar</button>
+  </div>
+  <div class="card"><h2>Clientes cadastrados</h2><div id="customerList"></div></div>
+  <button class="gray" onclick="go('home')">← Voltar</button>
+</section>
+
+<section id="sold" class="hidden">
+  <div class="card">
+    <h2>📊 Itens vendidos</h2>
+    <div class="muted">Total de quantidades dos itens em todos os pedidos salvos.</div>
+    <div class="grid" style="margin-top:10px">
+      <div><label>Pesquisar item</label><input id="soldSearch" placeholder="Ex.: Fano"></div>
+      <div><label>Período</label><select id="soldPeriod" onchange="renderSold()">
+        <option value="all">Todos os pedidos</option>
+        <option value="month">Este mês</option>
+        <option value="year">Este ano</option>
+      </select></div>
+    </div>
+    <div id="soldSummary" style="margin-top:12px"></div>
+    <div style="overflow:auto;margin-top:10px">
+      <table id="soldTable">
+        <thead><tr><th>Cód.</th><th>Produto</th><th>Cor</th><th>Item</th><th>Quantidade</th></tr></thead>
+        <tbody id="soldBody"></tbody>
+      </table>
+    </div>
+    <button class="gray" onclick="go('home')">← Voltar</button>
+  </div>
+</section>
+
+<section id="products" class="hidden">
+  <div class="card">
+    <h2>💰 Tabela de preços</h2>
+    <input id="catalogSearch" placeholder="Pesquisar produto ou código">
+    <div id="catalogList"></div>
+    <button class="gray" onclick="go('home')">← Voltar</button>
+  </div>
+</section>
+</main>
+
+<div id="quickClient" class="overlay" onclick="if(event.target===this)closeQuickClient()">
+  <div class="dialog">
+    <h2>Cadastrar cliente</h2>
+    <div class="muted">O cliente será cadastrado e o pedido continuará aberto.</div>
+    <label style="margin-top:10px">Cód.</label><input id="qCode" readonly style="background:#eee">
+    <label style="margin-top:8px">Razão Social</label><input id="qRazao">
+    <label style="margin-top:8px">CNPJ</label><input id="qCnpj">
+    <label style="margin-top:8px">Ins. Est.</label><input id="qIE">
+    <label style="margin-top:8px">Fantasia</label><input id="qFantasia">
+    <label style="margin-top:8px">Endereço</label><input id="qEndereco">
+    <label style="margin-top:8px">Cidade</label><input id="qCidade">
+    <label style="margin-top:8px">Telefone</label><input id="qTelefone">
+    <div class="actions">
+      <button class="green" onclick="saveQuickClient()">Salvar e continuar</button>
+      <button class="gray" onclick="closeQuickClient()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="lastPrice" class="overlay" onclick="if(event.target===this)closeLastPrice()">
+  <div class="dialog">
+    <h2>Último preço</h2>
+    <div id="lastPriceText"></div>
+    <div class="actions">
+      <button class="green" onclick="useLastPrice()">Usar último preço</button>
+      <button class="gray" onclick="closeLastPrice()">Usar preço da tabela</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const products=[{"code": "8.9.007", "name": "Garrafa Fano 250 mL", "item": "9881", "price": 26.45, "master": "6"}, {"code": "8.9.107", "name": "Garrafa Fano 400 mL", "item": "5202", "price": 28.35, "master": "6"}, {"code": "8.1.006", "name": "Garrafa Siena - 750 mL", "item": "6591", "price": 27.38, "master": "6"}, {"code": "8.2.006", "name": "Garrafa Siena - 1,0 L", "item": "2012", "price": 29.43, "master": "6"}, {"code": "8.8.005", "name": "Garrafa Roma - 500 mL", "item": "2481", "price": 25.79, "master": "6"}, {"code": "8.4.005", "name": "Garrafa Roma - 1,0 L", "item": "9112", "price": 29.67, "master": "6"}, {"code": "8.1.548", "name": "Garrafa Lisboa 1,0 L", "item": "9112", "price": 29.67, "master": "6"}, {"code": "8.7.005", "name": "Garrafa Roma Tradição 1,0 L", "item": "8832", "price": 33.43, "master": "6"}, {"code": "8.1.107", "name": "Garrafa Florença 650 mL", "item": "3922", "price": 32.1, "master": "6"}, {"code": "8.2.402", "name": "Garrafa Berlim", "item": "", "price": null, "master": "6"}, {"code": "8.3.026", "name": "Garrafa Veneza - 600 mL", "item": "1242", "price": 33.89, "master": "6"}, {"code": "8.3.007", "name": "Garrafa Veneza - 1,0 L", "item": "8762", "price": 37.49, "master": "6"}, {"code": "8.1.307", "name": "Garrafa Paris - 500 mL", "item": "3972", "price": 39.1, "master": "6"}, {"code": "8.1.207", "name": "Garrafa Paris - 1,0 L", "item": "4743", "price": 48.64, "master": "6"}, {"code": "8.1.507", "name": "Garrafa Vercelli - 500 mL", "item": "9982", "price": 40.59, "master": "6"}, {"code": "8.1.527", "name": "Garrafa Vercelli - 1,0 L", "item": "1343", "price": 48.03, "master": "6"}, {"code": "8.5.107", "name": "Garrafa Verona - 600 mL", "item": "8443", "price": 48.27, "master": "6"}, {"code": "8.5.007", "name": "Garrafa Verona - 1,0 L", "item": "9563", "price": 51.23, "master": "6"}, {"code": "8.6.007", "name": "Garrafa Verona 1,8 L", "item": "2874", "price": 66.95, "master": "6"}, {"code": "8.4.007", "name": "Garrafa Roma INOX 1,0 L", "item": "0644", "price": 62.44, "master": "6"}, {"code": "8.7.007", "name": "Garrafa Roma Tradição INOX 1,0 L", "item": "4754", "price": 64.04, "master": "6"}, {"code": "8.1.401", "name": "Garrafa Berlim INOX - 600 mL", "item": "2644", "price": 62.47, "master": "6"}, {"code": "8.1.402", "name": "Garrafa Berlim INOX - 1,0 L", "item": "7664", "price": 65.34, "master": "6"}, {"code": "8.5.113", "name": "Garrafa Verona INOX - 600 mL", "item": "7874", "price": 67.02, "master": "6"}, {"code": "8.5.013", "name": "Garrafa Verona INOX - 1,0 L", "item": "8045", "price": 75.71, "master": "6"}, {"code": "8.6.013", "name": "Garrafa Verona INOX - 1,8 L", "item": "5376", "price": 94.29, "master": "6"}, {"code": "8.1.410", "name": "Garrafa Mônaco INOX 2,5 L", "item": "1218", "price": 113.69, "master": "6"}, {"code": "8.1.215", "name": "Garrafa Paris INOX 1,0 L", "item": "1306", "price": 84.43, "master": "6"}, {"code": "8.1.415", "name": "Garrafa Madri INOX - Madri INOX 1,0 L", "item": "5702", "price": 29.05, "master": "6"}, {"code": "8.1.416", "name": "Garrafa Madri INOX - Madri INOX 1,6 L", "item": "4203", "price": 42.34, "master": "6"}, {"code": "8.1.420", "name": "Garrafa Madri INOX - Madri INOX 2,5 L", "item": "7402", "price": 28.66, "master": "6"}, {"code": "8.1.421", "name": "Garrafa Madri INOX - opção 4", "item": "1103", "price": 42.15, "master": "6"}, {"code": "8.1.418", "name": "Garrafa Madri INOX - Madri INOX 1,0 L", "item": "4745", "price": 76.64, "master": "6"}, {"code": "8.1.419", "name": "Garrafa Madri INOX - Madri INOX 1,6 L", "item": "8308", "price": 112.53, "master": "6"}, {"code": "8.1.417", "name": "Garrafa Madri INOX - Madri INOX 2,5 L", "item": "4974", "price": 67.12, "master": "6"}, {"code": "8.1.253", "name": "Garrafa Fano Kids 300 mL", "item": "2851", "price": 22.15, "master": "6"}, {"code": "7.1.217", "name": "Copo Térmico Munique 350 mL", "item": "7001", "price": 14.1, "master": "24"}, {"code": "7.1.296", "name": "Copo Térmico Minas 400 mL", "item": "2431", "price": 18.79, "master": "12"}, {"code": "7.1.266", "name": "Copo Térmico Miami 650 mL", "item": "9441", "price": 20.29, "master": "12"}, {"code": "7.1.276", "name": "Copo Térmico Tererê 650 mL", "item": "4932", "price": 33.52, "master": "12"}, {"code": "7.1.225", "name": "Jarra Térmica Caribe 2,0 L", "item": "8052", "price": 35.11, "master": "6"}, {"code": "7.1.205", "name": "Jarra Térmica Pavia 2,5 L", "item": "", "price": null, "master": "6"}, {"code": "7.1.155", "name": "Botijão Térmico Turim 5,0 L", "item": "2163", "price": 50.57, "master": "6"}, {"code": "7.1.165", "name": "Botijão Térmico Arezzo 5,0 L", "item": "1655", "price": 77.85, "master": "6"}, {"code": "7.1.175", "name": "Botijão Térmico Arezzo 10,0 L", "item": "8378", "price": 122.33, "master": "6"}, {"code": "7.1.601", "name": "Porta-Gelo Alaska", "item": "5303", "price": 42.49, "master": "6"}, {"code": "7.1.620", "name": "Balde Térmico de Gelo 6,0 L", "item": "0213", "price": 43.68, "master": "12"}, {"code": "7.1.113", "name": "Caixa Térmica Floripa - 7,5 L", "item": "9093", "price": 54.73, "master": "1"}, {"code": "7.1.111", "name": "Caixa Térmica Floripa - 15,0 L", "item": "2694", "price": 69.47, "master": "1"}, {"code": "7.1.110", "name": "Caixa Térmica Floripa - 30,0 L", "item": "6507", "price": 98.78, "master": "1"}, {"code": "7.1.123", "name": "Caixa Térmica Floripa - opção 4", "item": "65531", "price": 189.78, "master": "1"}, {"code": "7.2.004", "name": "Caixa Térmica Jurerê sem mesa", "item": "3566", "price": 93.14, "master": "1"}, {"code": "7.2.023", "name": "Caixa Térmica Jurerê 1 mesa - 20,0 L", "item": "1818", "price": 114.53, "master": "1"}, {"code": "7.2.021", "name": "Caixa Térmica Jurerê 1 mesa - 36,0 L", "item": "25711", "price": 164.53, "master": "1"}, {"code": "7.2.043", "name": "Caixa Térmica Jurerê 2 mesas - 20,0 L", "item": "8079", "price": 135.91, "master": "1"}, {"code": "7.2.041", "name": "Caixa Térmica Jurerê 2 mesas - 36,0 L", "item": "57631", "price": 191.45, "master": "1"}, {"code": "6.3.103", "name": "Bolsa Térmica Ice Cooler - 6 un. / 7,0 L", "item": "1114", "price": 57.55, "master": "24"}, {"code": "6.3.101", "name": "Bolsa Térmica Ice Cooler - 24 un. / 7,0 L", "item": "4304", "price": 56.48, "master": "24"}, {"code": "6.3.102", "name": "Bolsa Térmica Ice Cooler - 6 un. / 14,0 L", "item": "9505", "price": 70.83, "master": "24"}, {"code": "6.3.203", "name": "Bolsa Térmica Ice Cooler - 24 un. / 14,0 L", "item": "6794", "price": 69.66, "master": "24"}, {"code": "6.3.251", "name": "Bolsa Térmica Pratfit 6,0 L", "item": "9873", "price": 53.05, "master": "6"}, {"code": "7.1.507", "name": "Porta-Latas Padrão 350 mL", "item": "926", "price": 8.81, "master": "24"}, {"code": "7.1.524", "name": "Porta-Latas Slim 350 mL", "item": "416", "price": 8.6, "master": "24"}, {"code": "7.1.530", "name": "Suporte de Cerveja Long Neck 350 mL", "item": "409", "price": 12.66, "master": "24"}, {"code": "7.1.510", "name": "Suporte de Cerveja 600 mL", "item": "3911", "price": 16.7, "master": "12"}, {"code": "7.1.300", "name": "Organizador Térmico Milão", "item": "6743", "price": 48.66, "master": "12"}, {"code": "7.1.329", "name": "Organizador Térmico Milão - 6,0 L", "item": "1785", "price": 82.19, "master": ""}, {"code": "7.1.331", "name": "Organizador Térmico Milão - 7,5 L", "item": "6006", "price": 84.08, "master": ""}, {"code": "7.1.344", "name": "Organizador Fit Califórnia 1,3 L", "item": "9181", "price": 25.47, "master": "12"}, {"code": "7.1.710", "name": "Açucareiro 350 mL", "item": "116", "price": 8.55, "master": "12"}, {"code": "7.1.800", "name": "Jarra / Leiteira 1,0 L", "item": "2301", "price": 14.45, "master": "12"}, {"code": "7.1.351", "name": "Organizador Hermético Dubai - 1,5 L", "item": "5761", "price": 23.45, "master": "12"}, {"code": "7.1.352", "name": "Organizador Hermético Dubai - 2,0 L", "item": "5881", "price": 26.39, "master": "12"}, {"code": "7.1.361", "name": "Organizador Hermético Dubai - 3,0 L", "item": "8042", "price": 33.71, "master": "12"}, {"code": "7.1.701", "name": "Suporte para Filtro de Café", "item": "946", "price": 9.09, "master": "24"}, {"code": "7.1.720", "name": "Bandeja Servire I", "item": "9822", "price": 32.05, "master": "12"}, {"code": "7.1.730", "name": "Bandeja Servire II", "item": "3733", "price": 47.22, "master": "6"}, {"code": "7.1.870", "name": "Bandeja Servire III", "item": "3542", "price": 34.34, "master": "12"}, {"code": "7.1.810", "name": "Bandeja Mult-Serve P", "item": "8001", "price": 14.11, "master": "24"}, {"code": "7.1.820", "name": "Bandeja Mult-Serve G", "item": "", "price": null, "master": "24"}, {"code": "7.1.740", "name": "Porta-Sachet P", "item": "165", "price": 7.85, "master": "24"}, {"code": "7.1.750", "name": "Porta-Sachet G", "item": "029", "price": 12.88, "master": "24"}, {"code": "7.1.900", "name": "Porta-Guardanapo", "item": "2431", "price": 18.79, "master": "12"}, {"code": "7.1.940", "name": "Porta-Palito", "item": "", "price": null, "master": "24"}, {"code": "7.1.950", "name": "Porta-Sal", "item": "681", "price": 2.6, "master": "24"}, {"code": "7.1.910", "name": "Galheteiro 4 em 1", "item": "", "price": null, "master": "12"}, {"code": "7.1.840", "name": "Petisqueira 25 cm", "item": "9091", "price": 26.73, "master": "6"}, {"code": "6.3.480", "name": "Bandeja para Garçom 35 cm - 35 cm", "item": "9651", "price": 21.97, "master": "12"}, {"code": "6.3.481", "name": "Bandeja para Garçom 35 cm - 45 cm", "item": "1921", "price": 18.07, "master": "12"}, {"code": "6.3.482", "name": "Bandeja para Garçom 35 cm - 55 cm", "item": "5545", "price": 76.37, "master": "12"}, {"code": "7.1.830", "name": "Porta-Guardanapo One", "item": "4401", "price": 14.62, "master": "12"}, {"code": "7.1.780", "name": "Porta-Guardanapo Easy Puxe", "item": "9011", "price": 15.53, "master": "12"}, {"code": "7.1.770", "name": "Porta-Guardanapo Single", "item": "5921", "price": 18.13, "master": "12"}, {"code": "7.1.790", "name": "Porta-Guardanapo Triútil", "item": "5661", "price": 23.31, "master": "12"}, {"code": "7.1.760", "name": "Porta-Canudo", "item": "", "price": null, "master": "12"}, {"code": "7.1.890", "name": "Bisnaga para Molho 250 mL", "item": "102", "price": 2.81, "master": "24"}, {"code": "7.1.406", "name": "Suporte para Bombona de Água", "item": "2502", "price": 28.73, "master": "12"}, {"code": "6.3.401", "name": "Bomba D’Água - 10,0 L", "item": "2081", "price": 25.23, "master": "50"}, {"code": "6.3.401", "name": "Bomba D’Água - 20,0 L", "item": "1171", "price": 23.95, "master": "50"}, {"code": "7.1.860", "name": "Organizador de Condimento Multiuso 600 mL", "item": "165", "price": 7.85, "master": "12"}, {"code": "7.1.931", "name": "Porta-Condimentos Giratório 9 Potes", "item": "9334", "price": 60.75, "master": "6"}, {"code": "7.1.921", "name": "Porta-Condimentos Giratório 12 Potes", "item": "", "price": null, "master": "6"}, {"code": "7.1.880", "name": "Pote Dosador de Leite em Pó 300 mL", "item": "578", "price": 12.25, "master": "12"}, {"code": "6.3.421", "name": "Jarra Infusora 750 mL - Jarra 750 mL", "item": "706", "price": 8.5, "master": "30"}, {"code": "6.3.440", "name": "Jarra Infusora 750 mL - Filtro infusor", "item": "2372", "price": 38.25, "master": "30"}, {"code": "6.3.422", "name": "Coadores Ecológicos - Mini Coador Ecológico", "item": "4641", "price": 20.5, "master": "12"}, {"code": "6.3.420", "name": "Coadores Ecológicos - Coador Ecológico Inox 102", "item": "0223", "price": 45.08, "master": "12"}, {"code": "6.3.423", "name": "Coadores Ecológicos - Coador Ecológico Inox 103", "item": "6073", "price": 51.88, "master": "12"}, {"code": "6.3.450", "name": "Moedores de Café - Moedor de Café Pequeno", "item": "9742", "price": 34.71, "master": "12"}, {"code": "6.3.451", "name": "Moedores de Café - Moedor de Café Prático", "item": "4263", "price": 50.74, "master": "12"}, {"code": "6.3.460", "name": "Prensa Francesa - 350 mL", "item": "8261", "price": 22.79, "master": "12"}, {"code": "6.3.461", "name": "Prensa Francesa - 650 mL", "item": "5312", "price": 29.89, "master": "12"}, {"code": "6.3.430", "name": "Cafeteira Italiana Classic", "item": "8273", "price": 52.19, "master": "12"}, {"code": "6.3.432", "name": "Cafeteira Italiana Splendore", "item": "1314", "price": 57.83, "master": "12"}, {"code": "6.2.101", "name": "Chaleira com Apito - 2,0 L", "item": "8992", "price": 41.97, "master": ""}, {"code": "6.2.105", "name": "Chaleira com Apito - 3,0 L", "item": "0693", "price": 55.44, "master": ""}, {"code": "6.2.102", "name": "Chaleira com Apito - opção 3", "item": "4283", "price": 53.54, "master": ""}, {"code": "6.2.106", "name": "Chaleira com Apito - opção 4", "item": "2905", "price": 71.29, "master": ""}, {"code": "6.1.101", "name": "Chaleira Elétrica Atacama 1,8 L - 127 V", "item": "2873", "price": 52.95, "master": "12"}, {"code": "6.1.102", "name": "Chaleira Elétrica Atacama 1,8 L - 220 V", "item": "8504", "price": 56.81, "master": "12"}, {"code": "6.1.121", "name": "Chaleira Elétrica Mali 1,5 L - 127 V - 12 peças", "item": "5635", "price": 75.11, "master": "12"}, {"code": "6.1.122", "name": "Chaleira Elétrica Mali 1,5 L - 220 V - 12 peças", "item": "9405", "price": 70.69, "master": "12"}, {"code": "6.4.071", "name": "Bebedouro Elétrico", "item": "65612", "price": 303.18, "master": ""}, {"code": "6.4.027", "name": "Sanduicheira & Grill 2 em 1 - Sanduicheira 2 em 1", "item": "5364", "price": 64.89, "master": ""}, {"code": "6.4.028", "name": "Sanduicheira & Grill 2 em 1 - Grill 2 em 1", "item": "4635", "price": 75.1, "master": ""}, {"code": "6.4.025", "name": "Sanduicheira & Grill 2 em 1 - opção 3", "item": "7874", "price": 67.02, "master": ""}, {"code": "6.4.026", "name": "Sanduicheira & Grill 2 em 1 - opção 4", "item": "2155", "price": 77.17, "master": ""}, {"code": "6.4.031", "name": "Super Grill & Sanduicheira - Super Grill", "item": "5418", "price": 114.03, "master": "12"}, {"code": "6.4.032", "name": "Super Grill & Sanduicheira - Sanduicheira", "item": "4257", "price": 105.34, "master": "12"}, {"code": "6.4.029", "name": "Super Grill & Sanduicheira - opção 3", "item": "2997", "price": 111.89, "master": "12"}, {"code": "6.4.030", "name": "Super Grill & Sanduicheira - opção 4", "item": "6767", "price": 107.46, "master": "12"}, {"code": "6.4.045", "name": "Churrasqueira Elétrica", "item": "", "price": null, "master": "6"}, {"code": "6.4.050", "name": "Fogão Elétrico Inox 1 Boca", "item": "", "price": null, "master": ""}, {"code": "6.4.052", "name": "Fogão Elétrico Preto 1 Boca", "item": "", "price": null, "master": ""}, {"code": "6.4.054", "name": "Fogão Elétrico Inox 2 Bocas", "item": "", "price": null, "master": ""}, {"code": "6.4.056", "name": "Fogão Elétrico Preto 2 Bocas", "item": "", "price": null, "master": ""}, {"code": "6.4.009", "name": "Torradeira Elétrica", "item": "8346", "price": 90.13, "master": ""}, {"code": "6.3.452", "name": "Moedor de Café Elétrico", "item": "", "price": null, "master": "6"}, {"code": "6.4.011", "name": "Cafeteira Elétrica - 600 mL", "item": "2846", "price": 90.75, "master": "6"}, {"code": "6.4.012", "name": "Cafeteira Elétrica - 1,2 L", "item": "1187", "price": 109.35, "master": "6"}, {"code": "6.3.470", "name": "Cozedor de Ovos Elétrico", "item": "9592", "price": 41.43, "master": ""}, {"code": "6.4.060", "name": "Panela de Arroz Elétrica Pratic - 6 xícaras", "item": "6418", "price": 114.04, "master": "4"}, {"code": "6.4.061", "name": "Panela de Arroz Elétrica Pratic - 10 xícaras", "item": "9229", "price": 129.21, "master": "4"}, {"code": "6.4.015", "name": "Panela de Arroz Elétrica - 6 xícaras", "item": "52801", "price": 151.55, "master": "4"}, {"code": "6.4.016", "name": "Panela de Arroz Elétrica - 10 xícaras", "item": "90511", "price": 161.13, "master": "4"}, {"code": "6.4.021", "name": "Panela de Pressão Elétrica 4,0 L", "item": "31302", "price": 284.38, "master": ""}, {"code": "6.4.022", "name": "Panela de Pressão Elétrica Digital 4,0 L", "item": "25602", "price": 289.13, "master": ""}, {"code": "6.4.019", "name": "Air Fryer Cairo 4,8 L", "item": "58961", "price": 237.79, "master": "4"}, {"code": "6.4.039", "name": "Air Fryer Forno Cairo 10 L", "item": "11792", "price": 415.95, "master": "2"}, {"code": "6.4.041", "name": "Air Fryer Forno Cairo 12 L", "item": "", "price": null, "master": "2"}, {"code": "8.1.120", "name": "Kit Café Prático", "item": "7273", "price": 52.18, "master": "6"}, {"code": "7.1.230", "name": "Kit Caribe", "item": "1174", "price": 65.95, "master": "6"}, {"code": "7.1.280", "name": "Kit Tererê", "item": "1715", "price": 72.39, "master": "6"}, {"code": "7.1.381", "name": "Kit Organizador Hermético Dubai", "item": "8255", "price": 77.39, "master": "6"}, {"code": "8.1.130", "name": "Kit Unibaby", "item": "4715", "price": 72.44, "master": "6"}, {"code": "8.1.140", "name": "Kit Café Super Prático", "item": "4126", "price": 87.0, "master": "6"}, {"code": "7.1.391", "name": "Kit Organizador Hermético Dubai Trio", "item": "1225", "price": 73.09, "master": "6"}, {"code": "7.1.534", "name": "Suporte de Cerveja Long Neck 350 mL", "item": "", "price": null, "master": ""}, {"code": "7.1.514", "name": "Suporte de Cerveja 600 mL", "item": "", "price": null, "master": ""}, {"code": "7.1.365", "name": "Organizador Hermético Dubai 1,5 L", "item": "", "price": null, "master": ""}, {"code": "7.1.375", "name": "Organizador Hermético Dubai 2,5 L", "item": "", "price": null, "master": ""}, {"code": "7.1.312", "name": "Organizador Milão Simples 1,5 L", "item": "", "price": null, "master": ""}, {"code": "7.1.705", "name": "Suporte para Filtro de Café", "item": "", "price": null, "master": ""}, {"code": "7.1.754", "name": "Porta-Sachet G", "item": "", "price": null, "master": ""}, {"code": "7.1.824", "name": "Bandeja Mult-Serve G", "item": "", "price": null, "master": ""}, {"code": "7.1.734", "name": "Bandeja Servire II", "item": "", "price": null, "master": ""}, {"code": "7.1.844", "name": "Bandeja Servire III", "item": "", "price": null, "master": ""}, {"code": "7.1.716", "name": "Bandeja Servire I", "item": "", "price": null, "master": ""}, {"code": "7.1.874", "name": "Jarra / Leiteira 1,0 L", "item": "", "price": null, "master": ""}, {"code": "7.1.882", "name": "Pote Dosador", "item": "", "price": null, "master": ""}, {"code": "7.1.355", "name": "Organizador Hermético Apito Inox", "item": "", "price": null, "master": ""}, {"code": "6.2.108", "name": "Chaleira com Apito Inox", "item": "", "price": null, "master": ""}];
+let order={no:'',client:'',clientCode:'',note:'',quote:false,items:[]};
+let selectedProduct=null,lastPricePending=null;
+
+function money(v){return Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function clients(){return JSON.parse(localStorage.getItem('gnkClients')||'[]')}
+function orders(){return JSON.parse(localStorage.getItem('gnkOrders')||'[]')}
+function show(id){['home','order','items','orders','customers','products','sold'].forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==id));closeMenu();if(id==='orders')renderOrders();if(id==='customers'){renderCustomers();clearCustomerForm()}if(id==='products')renderCatalog();if(id==='sold')renderSold()}
+function go(id){show(id)}
+function openMenu(){document.getElementById('side').style.display='block'}
+function closeMenu(){document.getElementById('side').style.display='none'}
+
+function nextOrderNo(){
+  const a=orders();
+  const max=a.reduce((m,o)=>Math.max(m,Number(o.no||0)),0);
+  const next=max+1;
+  localStorage.setItem('gnkNextOrder',String(next));
+  return String(next).padStart(5,'0');
+}
+function nextClientNo(){return String(Number(localStorage.getItem('gnkNextClient')||1)).padStart(5,'0')}
+
+function startNewOrder(){
+  closeLastPrice(); selectedProduct=null;
+  order={no:nextOrderNo(),client:'',clientCode:'',note:'',quote:false,items:[]};
+  document.getElementById('clientInput').value='';
+  document.getElementById('clientInput').dataset.code='';
+  document.getElementById('orderNote').value='';
+  document.getElementById('newClientBox').classList.add('hidden');
+  document.getElementById('clientResults').innerHTML='';
+  document.getElementById('quoteBtn').textContent='☐ Orçamento';
+  document.getElementById('orderNo').textContent=order.no;
+  renderOrder();
+  show('order');
+}
+
+function cancelCurrentOrder(){
+  if(!confirm('Cancelar este pedido? Ele não será salvo e o número ficará disponível para o próximo pedido.')) return;
+  closeLastPrice();
+  selectedProduct=null;
+  order={no:'',client:'',clientCode:'',note:'',quote:false,items:[]};
+  document.getElementById('clientInput').value='';
+  document.getElementById('clientInput').dataset.code='';
+  document.getElementById('orderNote').value='';
+  document.getElementById('clientResults').innerHTML='';
+  document.getElementById('newClientBox').classList.add('hidden');
+  document.getElementById('selectedProduct').classList.add('hidden');
+  show('home');
+}
+
+function toggleQuote(){order.quote=!order.quote;document.getElementById('quoteBtn').textContent=order.quote?'☑ Orçamento':'☐ Orçamento'}
+
+const clientInput=document.getElementById('clientInput');
+clientInput.addEventListener('input',()=>{
+  const q=clientInput.value.trim().toLowerCase();
+  clientInput.dataset.code='';
+  order.clientCode='';
+  const box=document.getElementById('clientResults');
+  document.getElementById('newClientBox').classList.add('hidden');
+  if(!q){box.innerHTML='';return}
+  const found=clients().filter(c=>(c.code+' '+c.razao+' '+c.fantasia+' '+c.cnpj).toLowerCase().includes(q)).slice(0,10);
+  box.innerHTML=found.map(c=>`<div class="result" onclick="chooseClient('${esc(c.code)}')"><b>${esc(c.code)} — ${esc(c.fantasia||c.razao||'Cliente')}</b><span class="muted">${esc(c.razao||'')} ${c.cidade?'· '+esc(c.cidade):''}</span></div>`).join('');
+  if(!found.length) document.getElementById('newClientBox').classList.remove('hidden');
+});
+function chooseClient(code){
+  const c=clients().find(x=>x.code===code);if(!c)return;
+  order.clientCode=c.code;order.client=c.fantasia||c.razao||'Cliente '+c.code;
+  clientInput.value=c.code+' — '+order.client;clientInput.dataset.code=c.code;
+  document.getElementById('clientResults').innerHTML='';document.getElementById('newClientBox').classList.add('hidden');renderOrder();
+}
+function continueWithoutClient(){
+  order.clientCode='';order.client=clientInput.value.trim();document.getElementById('newClientBox').classList.add('hidden');renderOrder();
+}
+function openQuickClient(){
+  const name=clientInput.value.trim();
+  ['qCnpj','qIE','qFantasia','qEndereco','qCidade','qTelefone'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('qCode').value=nextClientNo();
+  document.getElementById('qRazao').value=name;
+  document.getElementById('quickClient').style.display='flex';
+}
+function closeQuickClient(){document.getElementById('quickClient').style.display='none'}
+function saveQuickClient(){
+  const c={code:document.getElementById('qCode').value,razao:document.getElementById('qRazao').value.trim(),cnpj:document.getElementById('qCnpj').value.trim(),ie:document.getElementById('qIE').value.trim(),fantasia:document.getElementById('qFantasia').value.trim(),endereco:document.getElementById('qEndereco').value.trim(),cidade:document.getElementById('qCidade').value.trim(),telefone:document.getElementById('qTelefone').value.trim()};
+  const a=clients();a.push(c);localStorage.setItem('gnkClients',JSON.stringify(a));localStorage.setItem('gnkNextClient',String(Number(localStorage.getItem('gnkNextClient')||1)+1));
+  order.clientCode=c.code;order.client=c.fantasia||c.razao||'Cliente '+c.code;
+  clientInput.value=c.code+' — '+order.client;clientInput.dataset.code=c.code;
+  closeQuickClient();document.getElementById('newClientBox').classList.add('hidden');renderOrder();
+}
+
+function goToItems(){document.getElementById('itemsOrderNo').textContent=order.no;renderItems();show('items')}
+const productSearch=document.getElementById('productSearch');
+productSearch.addEventListener('input',()=>{
+  const q=productSearch.value.trim().toLowerCase(),box=document.getElementById('productResults');
+  if(!q){box.innerHTML='';return}
+  const found=products.filter(p=>(p.name+' '+p.code+' '+p.item).toLowerCase().includes(q)).slice(0,15);
+  box.innerHTML=found.map(p=>`<div class="result" onclick="chooseProduct('${esc(p.code)}')"><b>${esc(p.name)}</b><span class="muted">Cód. ${esc(p.code)} · Item ${esc(p.item||'—')} · Preço R$ ${p.price==null?'':money(p.price)} · Master ${esc(p.master||'—')}</span></div>`).join('')||'<div class="muted">Nenhum produto encontrado.</div>';
+});
+
+let selectedColor={name:'Sortido',code:null};
+const defaultColors=['Verde','Azul','Vermelho','Preto','Branco','Amarelo','Bege','Cinza Médio','Verde Musgo','Caramelo'];
+
+function productColorVariants(p){
+  // The catalog uses family-specific color codes. For the first test,
+  // use the product's own code as the sortido/default code and show
+  // the color buttons. Known Siena/Roma code families are mapped below.
+  const n=(p.name||'').toLowerCase();
+  const map={};
+  if(n.includes('siena')){
+    const pairs=[
+      ['Preto','8.1.008'],['Azul','8.1.001'],['Vermelho','8.1.009'],['Branco','8.1.011'],
+      ['Verde','8.1.013'],['Cinza Médio','8.1.007'],['Caramelo','8.1.002']
+    ];
+    pairs.forEach(x=>map[x[0]]=x[1]);
+    return pairs.map(x=>({name:x[0],code:x[1]}));
+  }
+  if(n.includes('roma')){
+    const pairs=[
+      ['Preto','8.8.004'],['Azul','8.8.002'],['Vermelho','8.8.003'],['Branco','8.8.007'],
+      ['Verde Musgo','8.8.006'],['Amarelo','8.8.009'],['Bege','8.8.010'],['Cinza Médio','8.8.010']
+    ];
+    return pairs.map(x=>({name:x[0],code:x[1]}));
+  }
+  return defaultColors.map(c=>({name:c,code:null}));
+}
+function renderColorOptions(){
+  const box=document.getElementById('colorOptions'); if(!box)return;
+  const vars=productColorVariants(selectedProduct);
+  box.innerHTML='';
+  const sort=document.createElement('button');
+  sort.className=selectedColor.name==='Sortido'?'green':'light';
+  sort.textContent='□ Sortido';
+  sort.onclick=()=>selectColor('Sortido',null);
+  box.appendChild(sort);
+  vars.forEach(v=>{
+    const b=document.createElement('button');
+    b.className=selectedColor.name===v.name?'green':'light';
+    b.textContent='□ '+v.name;
+    b.onclick=()=>selectColor(v.name,v.code);
+    box.appendChild(b);
+  });
+}
+function selectColor(name,code){
+  selectedColor={name,code};
+  renderColorOptions();
+}
+
+function chooseProduct(code){
+  selectedProduct=products.find(p=>p.code===code);if(!selectedProduct)return;selectedColor={name:'Sortido',code:null};
+  productSearch.value='';document.getElementById('productResults').innerHTML='';
+  document.getElementById('selectedProduct').classList.remove('hidden');
+  document.getElementById('selectedName').textContent=selectedProduct.name;
+  document.getElementById('selectedInfo').textContent='Cód. '+selectedProduct.code+' | Item '+(selectedProduct.item||'—')+' | Master '+(selectedProduct.master||'—');renderColorOptions();
+  document.getElementById('itemQty').value=1;
+  document.getElementById('itemPrice').value=selectedProduct.price==null?'':selectedProduct.price;
+  setTimeout(checkLastPrice,50);
+}
+function cancelSelected(){selectedProduct=null;selectedColor={name:'Sortido',code:null};delete document.getElementById('selectedProduct').dataset.editIndex;document.getElementById('selectedProduct').classList.add('hidden');productSearch.value='';document.getElementById('productResults').innerHTML='';closeLastPrice()}
+function checkLastPrice(){
+  closeLastPrice();
+  if(!selectedProduct||!order.clientCode)return;
+  const hist=orders().filter(o=>(o.clientCode||'')===order.clientCode&&o.no!==order.no);
+  let last=null;
+  hist.forEach(o=>(o.items||[]).forEach(it=>{
+    if(String(it.code)===String(selectedProduct.code)){
+      const time=o.timestamp||0;if(!last||time>last.timestamp)last={price:Number(it.price||0),timestamp:time,orderNo:o.no};
+    }
+  }));
+  if(!last)return;
+  lastPricePending=last;
+  document.getElementById('lastPriceText').innerHTML='<b>'+esc(selectedProduct.name)+'</b><br>Último preço deste cliente: <strong>R$ '+money(last.price)+'</strong><br><span class="muted">Pedido '+esc(last.orderNo)+'</span>';
+  document.getElementById('lastPrice').style.display='flex';
+}
+function useLastPrice(){if(lastPricePending)document.getElementById('itemPrice').value=lastPricePending.price;closeLastPrice()}
+function closeLastPrice(){lastPricePending=null;document.getElementById('lastPrice').style.display='none'}
+
+function addItem(){
+  if(!selectedProduct)return alert('Escolha um produto.');
+  const qty=Math.max(1,Number(document.getElementById('itemQty').value||1));
+  const price=Number(document.getElementById('itemPrice').value||0);
+  const editIndex=document.getElementById('selectedProduct').dataset.editIndex;
+  const item={code:selectedColor.code||selectedProduct.code,name:selectedProduct.name,color:selectedColor.name,item:selectedProduct.item,qty,price,master:selectedProduct.master,baseCode:selectedProduct.code};
+  if(editIndex!==undefined && editIndex!==''){
+    order.items[Number(editIndex)]=item;
+    delete document.getElementById('selectedProduct').dataset.editIndex;
+  } else {
+    order.items.push(item);
+  }
+  cancelSelected();
+  renderItems();
+}
+
+function removeItem(i){order.items.splice(i,1);renderItems()}
+function renderItems(){
+  const box=document.getElementById('itemsList');
+  if(!order.items.length){
+    box.innerHTML='<div class="muted">Nenhum item adicionado.</div>';
+  } else {
+    box.innerHTML=order.items.map((x,i)=>`
+      <div class="item-card">
+        <b>${esc(x.name)}</b>
+        <div class="muted">Cód. ${esc(x.code)} · ${esc(x.color||'Sortido')} · Item ${esc(x.item||'—')}</div>
+        <div>Qtd.: ${x.qty} · R$ ${money(x.price)} · Total: <b>R$ ${money(x.qty*x.price)}</b></div>
+        <div class="actions">
+          <button class="blue" onclick="editItem(${i})">Alterar</button>
+          <button class="gray" onclick="removeItem(${i})">Excluir</button>
+        </div>
+      </div>`).join('');
+  }
+  const total=order.items.reduce((s,x)=>s+x.qty*x.price,0);
+  document.getElementById('itemsTotal').textContent=money(total);
+  renderOrder();
+}
+function editItem(i){
+  const x=order.items[i];
+  if(!x)return;
+  selectedProduct=products.find(p=>String(p.code)===String(x.baseCode||x.code))||products.find(p=>String(p.code)===String(x.code));
+  if(!selectedProduct)return;
+  selectedColor={name:x.color||'Sortido',code:(x.color&&x.color!=='Sortido')?x.code:null};
+  document.getElementById('selectedProduct').classList.remove('hidden');
+  document.getElementById('selectedName').textContent=selectedProduct.name;
+  document.getElementById('selectedInfo').textContent='Cód. '+selectedProduct.code+' | Item '+(selectedProduct.item||'—')+' | Master '+(selectedProduct.master||'—');
+  document.getElementById('itemQty').value=x.qty;
+  document.getElementById('itemPrice').value=x.price;
+  renderColorOptions();
+  document.getElementById('selectedProduct').dataset.editIndex=String(i);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderOrder(){
+  document.getElementById('orderNo').textContent=order.no;
+  const box=document.getElementById('orderItemsPreview');
+  box.innerHTML=order.items.length?order.items.map(x=>`<div class="pill"><b>${esc(x.name)}</b> × ${x.qty}</div>`).join(''):'<div class="muted">Nenhum item adicionado.</div>';
+  document.getElementById('orderTotal').textContent=money(order.items.reduce((s,x)=>s+x.qty*x.price,0));
+}
+
+function saveOrder(){
+  if(!order.items.length)return alert('Adicione pelo menos um item.');
+  order.client=document.getElementById('clientInput').value.trim()||order.client;
+  order.note=document.getElementById('orderNote').value.trim();
+  order.timestamp=Date.now();order.date=new Date().toLocaleString('pt-BR');
+  const a=orders();const i=a.findIndex(x=>x.no===order.no);if(i>=0)a[i]=JSON.parse(JSON.stringify(order));else a.push(JSON.parse(JSON.stringify(order)));
+  localStorage.setItem('gnkOrders',JSON.stringify(a));
+  nextOrderNo();
+  alert((order.quote?'Orçamento ':'Pedido ')+order.no+' salvo.');
+}
+function renderOrders(){
+  const a=orders().sort((x,y)=>(y.timestamp||0)-(x.timestamp||0)),box=document.getElementById('ordersList');
+  box.innerHTML=a.length?a.map((o,i)=>`<div class="card" style="box-shadow:none;border:1px solid #ddd"><b>${o.quote?'Orçamento':'Pedido'} ${esc(o.no)}</b><br>${esc(o.client||'Sem cliente')}<br><b>R$ ${money(o.items.reduce((s,x)=>s+x.qty*x.price,0))}</b><div class="actions"><button onclick="openSaved(${i})">Abrir</button><button class="gray" onclick="printSaved(${i})">🖨️ Imprimir</button><button class="green" onclick="shareWhatsApp(${i})">📱 WhatsApp</button><button class="gray" onclick="deleteSaved(${i})">Excluir</button></div></div>`).join(''):'<div class="muted">Nenhum pedido salvo.</div>';
+}
+function openSaved(i){const a=orders().sort((x,y)=>(y.timestamp||0)-(x.timestamp||0)),o=a[i];if(!o)return;order=JSON.parse(JSON.stringify(o));document.getElementById('clientInput').value=o.client||'';document.getElementById('clientInput').dataset.code=o.clientCode||'';document.getElementById('orderNote').value=o.note||'';document.getElementById('quoteBtn').textContent=o.quote?'☑ Orçamento':'☐ Orçamento';renderOrder();show('order')}
+function deleteSaved(i){const a=orders().sort((x,y)=>(y.timestamp||0)-(x.timestamp||0));const target=a[i];if(!target)return;if(confirm('Excluir este registro?')){const all=orders().filter(x=>x.no!==target.no);localStorage.setItem('gnkOrders',JSON.stringify(all));renderOrders()}}
+
+
+function buildWhatsAppText(o){
+  const cliente=clients().find(c=>c.code===o.clientCode)||{};
+  const total=(o.items||[]).reduce((s,x)=>s+Number(x.qty||0)*Number(x.price||0),0);
+  const tipo=o.quote?'ORÇAMENTO':'PEDIDO';
+  const date=o.date||new Date().toLocaleDateString('pt-BR');
+  const lines=[];
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push('        AAB DISTRIBUIÇÃO');
+  lines.push(tipo+' Nº '+(o.no||''));
+  lines.push('Data: '+date);
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push('');
+  lines.push('CLIENTE');
+  lines.push('Cliente: '+((cliente.code?cliente.code+' - ':'')+(cliente.razao||o.client||'')));
+  if(cliente.fantasia) lines.push('Fantasia: '+cliente.fantasia);
+  if(cliente.cnpj) lines.push('CNPJ: '+cliente.cnpj);
+  if(cliente.telefone) lines.push('Fone: '+cliente.telefone);
+  if(cliente.endereco) lines.push('Endereço: '+cliente.endereco);
+  if(cliente.cidade) lines.push('Cidade: '+cliente.cidade);
+  if(o.clientCode) lines.push('Cód. cliente: '+o.clientCode);
+  lines.push('');
+  lines.push('OBSERVAÇÕES / PEDIDO CLIENTE');
+  lines.push(o.note||'—');
+  lines.push('');
+  lines.push('ITENS DO PEDIDO');
+  lines.push('────────────────────────');
+  (o.items||[]).forEach((x,i)=>{
+    const desc=(x.name||'')+(x.color&&x.color!=='Sortido'?' - '+x.color:' - Sortido');
+    const line=Number(x.qty||0)*Number(x.price||0);
+    lines.push((i+1)+'. '+desc);
+    lines.push('   Código: '+(x.code||'—'));
+    if(x.gtin) lines.push('   Cód. barras: '+x.gtin);
+    if(x.brand) lines.push('   Marca: '+x.brand);
+    if(x.ncm) lines.push('   NCM: '+x.ncm);
+    lines.push('   Qtd: '+x.qty+' | Emb: '+(x.master||'UN'));
+    lines.push('   Vr. Un.: R$ '+money(x.price)+' | Vr. Total: R$ '+money(line));
+    lines.push('');
+  });
+  lines.push('────────────────────────');
+  lines.push('RESUMO');
+  lines.push('Valor Mercadoria: R$ '+money(total));
+  lines.push('Valor IPI: R$ 0,00');
+  lines.push('Valor ST: R$ 0,00');
+  lines.push('Valor FCP/ST: R$ 0,00');
+  lines.push('Desc. Total: R$ 0,00');
+  lines.push('TOTAL: R$ '+money(total));
+  lines.push('');
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push('AAB DISTRIBUIÇÃO');
+  return lines.join('\n');
+}
+function winAnsiHex(s){
+  const map={
+    'á':0xE1,'é':0xE9,'í':0xED,'ó':0xF3,'ú':0xFA,'ã':0xE3,'õ':0xF5,'â':0xE2,'ê':0xEA,'ô':0xF4,'ç':0xE7,
+    'Á':0xC1,'É':0xC9,'Í':0xCD,'Ó':0xD3,'Ú':0xDA,'Ã':0xC3,'Õ':0xD5,'Â':0xC2,'Ê':0xCA,'Ô':0xD4,'Ç':0xC7,
+    'à':0xE0,'ü':0xFC,'Ü':0xDC,'º':0xBA,'ª':0xAA,'–':0x96,'—':0x97,'•':0x95,'°':0xB0
+  };
+  let out='';
+  for(const ch of String(s||'')){
+    let c=ch.charCodeAt(0);
+    if(map[ch]!=null)c=map[ch];
+    if(c===0x0A||c===0x0D)c=0x20;
+    if(c<32)c=0x20;
+    if(c>255)c=0x3F;
+    out+=c.toString(16).padStart(2,'0').toUpperCase();
+  }
+  return out;
+}
+function pdfText(stream,text,x,y,size=10,bold=false){
+  const font=bold?'/F2':'/F1';
+  stream.push(`BT ${font} ${size} Tf ${x} ${y} Td <${winAnsiHex(text)}> Tj ET`);
+}
+function pdfLine(stream,x1,y1,x2,y2){stream.push(`${x1} ${y1} m ${x2} ${y2} l S`)}
+function pdfRect(stream,x,y,w,h,fill=false){stream.push(`${x} ${y} ${w} ${h} re ${fill?'f':'S'}`)}
+function wrapPdfText(text,maxChars){
+  const words=String(text||'').split(/\s+/); const lines=[]; let line='';
+  for(const w of words){ if((line+' '+w).trim().length>maxChars){if(line)lines.push(line);line=w}else line=(line+' '+w).trim(); }
+  if(line)lines.push(line); return lines;
+}
+function makeOrderPdf(o){
+  const W=595,H=842,s=[],x0=28,pageW=539;
+  s.push('q','0 G 0 g 0.55 w');
+
+  // Cabeçalho — mesma proporção do exemplo enviado.
+  pdfRect(s,x0,770,pageW,50);
+  pdfText(s,'AAB DISTRIBUIÇÃO',48,794,21,true);
+  pdfText(s,o.quote?'ORCAMENTO N':'PEDIDO N',305,802,9,true);
+  pdfText(s,o.no||'',320,781,18,true);
+  pdfText(s,'Data digitacao',472,802,7,true);
+  pdfText(s,(o.date||'').split(',')[0],474,787,7);
+
+  // Dados do cliente.
+  pdfRect(s,x0,675,pageW,82);
+  const cliente=clients().find(c=>c.code===o.clientCode)||{};
+  const left=(cliente.code?cliente.code+' - ':'')+(cliente.razao||o.client||'');
+  pdfText(s,'Cliente:',38,741,8,true); pdfText(s,left,88,741,7.2);
+  pdfText(s,'CNPJ:',315,741,8,true); pdfText(s,cliente.cnpj||'',354,741,7.2);
+  pdfText(s,'Fantasia:',38,720,8,true); pdfText(s,cliente.fantasia||o.client||'',88,720,7.2);
+  pdfText(s,'Fone:',315,720,8,true); pdfText(s,cliente.telefone||'',354,720,7.2);
+  pdfText(s,'Endereco:',38,699,8,true); pdfText(s,cliente.endereco||'',88,699,7.2);
+  pdfText(s,'Representante:',315,699,8,true); pdfText(s,'AAB DISTRIBUIÇÃO',395,699,7.2);
+  pdfText(s,'Cidade:',38,681,8,true); pdfText(s,cliente.cidade||'',88,681,7.2);
+  pdfText(s,'Ped.Cliente:',315,681,8,true); pdfText(s,o.clientOrder||'',382,681,7.2);
+
+  // Observações e pagamento.
+  pdfRect(s,x0,630,pageW,34);
+  pdfText(s,'Observacoes / Pedido Cliente',38,650,8,true);
+  pdfText(s,o.note||'',38,636,7.2);
+  pdfRect(s,38,580,190,42);
+  pdfText(s,'Forma de pagamento:',47,610,8.5,true);
+  pdfText(s,o.payment||'Nao informada',47,591,8);
+
+  // Grade: as larguras somam exatamente 539 pt.
+  const cols=[45,45,145,65,40,45,35,35,42,42];
+  const heads=['Tipo Op.','Codigo','Descricao do produto','Cod.Barras','Marca','NCM','Qtde','Emb','Vr.Un','Vr.Total'];
+  const items=o.items||[];
+  const rowH=28;
+  const yTop=560, headerH=26;
+
+  let x=x0;
+  for(let i=0;i<cols.length;i++){
+    pdfRect(s,x,yTop,cols[i],headerH);
+    pdfText(s,heads[i],x+2,yTop+10,5.5,true);
+    x+=cols[i];
+  }
+
+  let y=yTop-headerH;
+  items.forEach((it,idx)=>{
+    if(idx%2===1){s.push('0.92 g');pdfRect(s,x0,y-rowH,pageW,rowH,true);s.push('0 G 0 g');}
+    x=x0;
+    for(const c of cols){pdfRect(s,x,y-rowH,c,rowH);x+=c;}
+
+    const desc=(it.name||'')+(it.color&&it.color!=='Sortido'?' - '+it.color:' - Sortido');
+    const lines=wrapPdfText(desc,24).slice(0,3);
+    const unit=Number(it.price||0), line=Number(it.qty||0)*unit;
+
+    pdfText(s,'PEDIDO',x0+3,y-10,5.4);
+    pdfText(s,it.code||'',x0+48,y-10,5.4);
+    lines.forEach((ln,j)=>pdfText(s,ln,x0+93,y-9-j*7,5.2));
+    pdfText(s,it.gtin||'',x0+238,y-10,4.8);
+    pdfText(s,it.brand||'',x0+303,y-10,5.2);
+    pdfText(s,it.ncm||'',x0+343,y-10,5.0);
+    pdfText(s,String(it.qty||0),x0+391,y-10,5.2);
+    pdfText(s,it.master||'UN',x0+426,y-10,5.2);
+    pdfText(s,money(unit),x0+461,y-10,5.2);
+    pdfText(s,money(line),x0+505,y-10,5.2);
+    y-=rowH;
+  });
+
+  // Resumo SEMPRE abaixo da última linha da tabela. Nunca pode invadir os itens.
+  const total=items.reduce((a,it)=>a+Number(it.qty||0)*Number(it.price||0),0);
+  const summaryTop = y - 18;
+  const summaryH = 118;
+  const summaryBottom = Math.max(155, summaryTop - summaryH);
+  pdfRect(s,365,summaryBottom,202,summaryH);
+  const vals=[
+    ['Valor Mercadoria:',money(total)],
+    ['Valor IPI:','0,00'],
+    ['Valor ST:','0,00'],
+    ['Valor FCP/ST:','0,00'],
+    ['Desc. Total:','0,00'],
+    ['Total:',money(total)]
+  ];
+  vals.forEach((v,i)=>{
+    const yy=summaryTop-17-i*17;
+    pdfText(s,v[0],375,yy,i===5?9:7.3,i===5);
+    pdfText(s,v[1],515,yy,i===5?9:7.3,i===5);
+  });
+
+  // Assinaturas ficam abaixo do resumo.
+  pdfLine(s,60,72,240,72);
+  pdfLine(s,355,72,535,72);
+  pdfText(s,'Assinatura do Cliente',105,59,7.5);
+  pdfText(s,'Assinatura do Representante',390,59,7.5);
+
+  s.push('Q');
+
+  const content=s.join('\n');
+  const objs=[],add=v=>{objs.push(v);return objs.length};
+  const font1=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+  const font2=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+  const cont=add(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+  const page=add(`<< /Type /Page /Parent 5 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 ${font1} 0 R /F2 ${font2} 0 R >> >> /Contents ${cont} 0 R >>`);
+  const pages=add(`<< /Type /Pages /Kids [${page} 0 R] /Count 1 >>`);
+  const catalog=add(`<< /Type /Catalog /Pages ${pages} 0 R >>`);
+  let pdf='%PDF-1.4\n',offs=[0];
+  for(let i=1;i<=objs.length;i++){offs[i]=pdf.length;pdf+=`${i} 0 obj\n${objs[i-1]}\nendobj\n`;}
+  const xref=pdf.length;
+  pdf+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`;
+  for(let i=1;i<=objs.length;i++) pdf+=String(offs[i]).padStart(10,'0')+' 00000 n \n';
+  pdf+=`trailer\n<< /Size ${objs.length+1} /Root ${catalog} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return new Blob([new TextEncoder().encode(pdf)],{type:'application/pdf'});
+}
+async function shareOrderPdfWhatsApp(o){
+  try{
+    const blob=makeOrderPdf(o);
+    const file=new File([blob],`${o.quote?'Orcamento':'Pedido'}_${o.no||'AAB'}.pdf`,{type:'application/pdf'});
+    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+      await navigator.share({files:[file]});
+      return;
+    }
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=file.name; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),5000);
+    alert('O PDF foi salvo. No Android, anexe esse PDF no WhatsApp.');
+  }catch(e){
+    if(e && e.name==='AbortError') return;
+    alert('Não foi possível enviar o PDF. Tente novamente.');
+  }
+}
+function shareWhatsApp(i){const a=orders().sort((x,y)=>(y.timestamp||0)-(x.timestamp||0)),o=a[i];if(o)shareOrderPdfWhatsApp(o)}
+function shareCurrentWhatsApp(){if(!order.items.length)return alert('Adicione pelo menos um item.');shareOrderPdfWhatsApp(order)}
+function printCurrent(){printOrder(order)}
+function printSaved(i){const a=orders().sort((x,y)=>(y.timestamp||0)-(x.timestamp||0));printOrder(a[i])}
+function printOrder(o){
+  const total=(o.items||[]).reduce((s,x)=>s+Number(x.qty||0)*Number(x.price||0),0);
+  const cliente=clients().find(c=>c.code===o.clientCode)||{};
+  const date=o.date||new Date().toLocaleDateString('pt-BR');
+  const rows=(o.items||[]).map(x=>{
+    const desc=(x.name||'')+(x.color&&x.color!=='Sortido'?' — '+x.color:' — Sortido');
+    const unit=Number(x.price||0), line=Number(x.qty||0)*unit;
+    return `<tr>
+      <td>PEDIDO</td><td>${esc(x.code||'')}</td><td class="desc">${esc(desc)}</td>
+      <td>${esc(x.gtin||'')}</td><td>${esc(x.brand||'')}</td><td>${esc(x.ncm||'')}</td>
+      <td class="c">${x.qty}</td><td class="c">${esc(x.master||'UN')}</td>
+      <td class="r">${money(unit)}</td><td class="r">${money(line)}</td>
+    </tr>`;
+  }).join('');
+  const w=window.open('','_blank');
+  if(!w)return alert('Permita janelas pop-up para imprimir.');
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(o.quote?'Orçamento':'Pedido')} ${esc(o.no||'')}</title>
+  <style>
+    @page{size:A4 portrait;margin:8mm}
+    *{box-sizing:border-box}
+    body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:0;font-size:9px}
+    .header{display:grid;grid-template-columns:1fr 180px 125px;border:1px solid #222;height:62px}
+    .brand{display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700}
+    .headbox{border-left:1px solid #222;text-align:center;padding:6px}
+    .headtitle{font-size:11px;font-weight:700}.docno{font-size:22px;font-weight:700;color:#1767a8;margin-top:3px}
+    .date{font-size:9px;margin-top:5px}
+    .box{border:1px solid #333;margin-top:7px;padding:7px}
+    .client{display:grid;grid-template-columns:1.7fr 1fr 1fr;column-gap:16px;row-gap:6px;min-height:82px}
+    .label{font-weight:700}
+    .obs{height:48px}
+    .pay{width:330px;height:42px}
+    table{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:10px}
+    th,td{border:1px solid #555;padding:4px 3px;vertical-align:top;line-height:1.15}
+    th{font-size:8px;text-align:center;background:#eee}
+    td{font-size:8px}
+    .desc{font-size:8.2px}
+    .c{text-align:center}.r{text-align:right;white-space:nowrap}
+    th:nth-child(1){width:7%}th:nth-child(2){width:7%}th:nth-child(3){width:28%}th:nth-child(4){width:11%}
+    th:nth-child(5){width:7%}th:nth-child(6){width:8%}th:nth-child(7){width:6%}th:nth-child(8){width:6%}
+    th:nth-child(9){width:10%}th:nth-child(10){width:10%}
+    tbody tr:nth-child(even) td{background:#eeeeF1}
+    .totals{width:300px;margin:22px 0 0 auto;border:1px solid #555}
+    .totals div{display:flex;justify-content:space-between;padding:5px 7px;border-bottom:1px solid #bbb;font-size:10px}
+    .totals .grand{font-size:13px;font-weight:700;background:#eee;border-bottom:0}
+    .sign{display:grid;grid-template-columns:1fr 1fr;gap:90px;margin:58px 20px 0}
+    .sign div{text-align:center;border-top:1px solid #222;padding-top:5px;font-size:9px}
+  </style></head><body>
+  <div class="header">
+    <div class="brand">AAB DISTRIBUIÇÃO</div>
+    <div class="headbox"><div class="headtitle">${esc(o.quote?'ORÇAMENTO':'PEDIDO')} Nº</div><div class="docno">${esc(o.no||'')}</div></div>
+    <div class="headbox"><div class="headtitle">Data digitação</div><div class="date">${esc(date)}</div></div>
+  </div>
+  <div class="box client">
+    <div><span class="label">Cliente:</span> ${esc((cliente.code?cliente.code+' - ':'')+(cliente.razao||o.client||''))}</div>
+    <div><span class="label">CNPJ:</span> ${esc(cliente.cnpj||'')}</div>
+    <div><span class="label">Representante:</span> AAB DISTRIBUIÇÃO</div>
+    <div><span class="label">Fantasia:</span> ${esc(cliente.fantasia||o.client||'')}</div>
+    <div><span class="label">Fone:</span> ${esc(cliente.telefone||'')}</div>
+    <div><span class="label">Ped.Cliente:</span> ${esc(o.clientOrder||'')}</div>
+    <div><span class="label">Endereço:</span> ${esc(cliente.endereco||'')}</div>
+    <div><span class="label">Ins. Est.:</span> ${esc(cliente.ie||'')}</div>
+    <div><span class="label">Cód. Cliente:</span> ${esc(o.clientCode||'')}</div>
+    <div><span class="label">Cidade:</span> ${esc(cliente.cidade||'')}</div><div></div><div></div>
+  </div>
+  <div class="box obs"><span class="label">Observações / Pedido Cliente</span><br>${esc(o.note||'')}</div>
+  <div class="box pay"><span class="label">Forma de pagamento:</span><div class="pay-value">${esc(o.payment||'Não informada')}</div></div>
+  <table><thead><tr>
+    <th>Tipo Op.</th><th>Código</th><th>Descrição do produto</th><th>Cod.Barras</th><th>Marca</th><th>NCM</th><th>Qtde</th><th>Emb</th><th>Vr.Un</th><th>Vr.Total</th>
+  </tr></thead><tbody>${rows}</tbody></table>
+  <div class="totals">
+    <div><span>Valor Mercadoria:</span><span>${money(total)}</span></div>
+    <div><span>Valor IPI:</span><span>0,00</span></div>
+    <div><span>Valor ST:</span><span>0,00</span></div>
+    <div><span>Valor FCP/ST:</span><span>0,00</span></div>
+    <div><span>Desc. Total:</span><span>0,00</span></div>
+    <div class="grand"><span>Total:</span><span>${money(total)}</span></div>
+  </div>
+  <div class="sign"><div>Assinatura do Cliente</div><div>Assinatura do Representante</div></div>
+  </body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(),300);
+}
+document.getElementById('catalogSearch').addEventListener('input',renderCatalog);
+function renderCatalog(){
+  const q=document.getElementById('catalogSearch').value.trim().toLowerCase();
+  const f=products.filter(p=>(p.name+' '+p.code+' '+p.item).toLowerCase().includes(q)).slice(0,40);
+  document.getElementById('catalogList').innerHTML=f.map(p=>`<div class="result"><b>${esc(p.name)}</b><span class="muted">Cód. ${esc(p.code)} · Item ${esc(p.item||'—')} · R$ ${p.price==null?'':money(p.price)} · Master ${esc(p.master||'—')}</span></div>`).join('');
+}
+</script>
+</body>
+</html>
