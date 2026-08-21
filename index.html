@@ -609,7 +609,7 @@ function makeOrderPdf(o){
   const heads=['Tipo Op.','Codigo','Descricao do produto','Cod.Barras','Marca','NCM','Qtde','Emb','Vr.Un','Vr.Total'];
   const items=o.items||[];
   const rowH=30;
-  const yTop=560, headerH=28;
+  const yTop=550, headerH=28;
   const colX=[];
   let x=x0;
   cols.forEach(c=>{colX.push(x);x+=c;});
@@ -806,3 +806,4 @@ function renderCatalog(){
 </script>
 </body>
 </html>
+yTop=560
